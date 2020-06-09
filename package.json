@@ -1,0 +1,17 @@
+{
+  "name": "fis",
+  "version": "0.0.0",
+  "description": "Flair Image System",
+  "main": "index.html",
+  "dependencies": {
+    "bootstrap-icons": "^1.0.0-alpha4",
+    "bootstrap": "^4.5.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "start": "./window.py",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Tobias Wältken <tobias@waeltken.info>",
+  "license": "ISC"
+}

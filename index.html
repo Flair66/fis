@@ -1,0 +1,184 @@
+<html lang="en">
+	<head>
+		<link rel="stylesheet" href="/bootstrap">
+		<style>
+
+		</style>
+	</head>
+	<body>
+		<div class="container-fluid pt-4">
+			<h1>
+				<img class="float-right" src="/logo.png" height="42px" />
+				FIS - Admin Panel
+				<small>for Flair66</small>
+			</h1>
+			<hr>
+			<div class="row">
+				<div class="col-md-6 pt-3">
+					<h2 class="mb-3">Images:</h2>
+					<div id="image_list"></div>
+					<hr>
+					<h3>Uploader:</h3>
+					<div class="input-group">
+						<div class="input-group-prepend">
+							<input type="button" class="btn btn-outline-secondary" value="Browse..." onclick="document.getElementById('file-input').click()" />
+						</div>
+						<input type="file" id="file-input" style="display: none;" onchange="document.getElementById('file-input-ui').value = this.files[0].name" />
+						<input type="text" id="file-input-ui" class="form-control-plaintext px-3 border-top border-bottom border-secondary" placeholder="No file selected." onclick="document.getElementById('file-input').click()" readonly />
+						<div class="input-group-append">
+							<input type="button" class="btn btn-outline-success" value="Upload" onclick="add_image()" />
+						</div>
+					</div>
+				</div>
+				<div class="col-md-6 pt-3">
+					<h2 class="mb-3">Frames:</h2>
+					<div id="frame_list"></div>
+					<hr>
+					<h3>Frame Times:</h3>
+					<div class="input-group">
+					<input type="int" id="frame_time" class="form-control" onkeypress="key_press_frame_times(event)" />
+						<div class="input-group-append">
+							<input type="button" id="frame_time_submit" class="btn btn-outline-success" value="Update" onclick="update_remote_frame_time()" />
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<script>
+			var index = 0;
+			var timeout = null;
+
+			function add_ui_image(name) {
+				document.getElementById('image_list').insertAdjacentHTML('beforeend', `
+					<div class="card mb-2">
+						<div class="card-body p-1 pl-2">
+							<div class="btn-group float-right" role="group">
+								<button type="button" class="btn btn-outline-danger px-2" onclick="delete_image('${name}')">
+									<svg class="bi bi-trash" width="1em" height="1em" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+										<path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+										<path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4L4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+									</svg>
+								</button>
+								<button type="button" class="btn btn-outline-secondary" onclick="add_frame('${name}')">
+									<svg class="bi bi-box-arrow-in-right" width="1em" height="1em" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+										<path fill-rule="evenodd" d="M8.146 11.354a.5.5 0 0 1 0-.708L10.793 8 8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708 0z"/>
+										<path fill-rule="evenodd" d="M1 8a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9A.5.5 0 0 1 1 8z"/>
+										<path fill-rule="evenodd" d="M13.5 14.5A1.5 1.5 0 0 0 15 13V3a1.5 1.5 0 0 0-1.5-1.5h-8A1.5 1.5 0 0 0 4 3v1.5a.5.5 0 0 0 1 0V3a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v10a.5.5 0 0 1-.5.5h-8A.5.5 0 0 1 5 13v-1.5a.5.5 0 0 0-1 0V13a1.5 1.5 0 0 0 1.5 1.5h8z"/>
+									</svg>
+								</button>
+							</div>
+							${name}
+						</div>
+					</div>
+				`);
+			}
+
+			function add_image() {
+				let formData = new FormData();
+				formData.append('file', document.getElementById('file-input').files[0]);
+				fetch('/images', { method: 'POST', body: formData }).then(() => {
+					document.getElementById('file-input').value = "";
+					document.getElementById('file-input-ui').value = "";
+					update_images(true);
+				});
+			}
+
+			async function update_images(clear = false) {
+				if (clear)
+					document.getElementById('image_list').innerHTML = '';
+
+				let data = await fetch("/images");
+				let images = await data.json();
+
+				images.forEach(function(image) {
+					add_ui_image(image);
+				});
+			}
+
+			function delete_image(name) {
+				let xhr = new XMLHttpRequest();
+				xhr.open("DELETE", "/images", false);
+				xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+				xhr.send("filename=" + name);
+
+				update_images(true);
+			}
+
+			function add_ui_frame(name) {
+				document.getElementById('frame_list').insertAdjacentHTML('beforeend', `
+					<div class="card mb-2">
+						<div class="card-body p-1 pl-2">
+							<div class="btn-group float-right" role="group">
+								<button type="button" class="btn btn-outline-danger px-2" onclick="delete_frame('${index}')">
+									<svg class="bi bi-trash" width="1em" height="1em" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+										<path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+										<path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4L4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+									</svg>
+								</button>
+							</div>
+							${name}
+						</div>
+					</div>
+				`);
+				index += 1;
+			}
+
+			function add_frame(name) {
+				let xhr = new XMLHttpRequest();
+				xhr.open("POST", "/frames", false);
+				xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+				xhr.send("filename=" + name);
+
+				if (xhr.status == 201)
+					add_ui_frame(name);
+			}
+
+			async function update_frames(clear = false) {
+				if (clear) {
+					document.getElementById('frame_list').innerHTML = '';
+					index = 0;
+				}
+
+				let data = await fetch("/frames");
+				let frames = await data.json();
+
+				frames.forEach(function(frame) {
+					add_ui_frame(frame, 1);
+				});
+			}
+
+			function delete_frame(id) {
+				let xhr = new XMLHttpRequest();
+				xhr.open("DELETE", "/frames", false);
+				xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+				xhr.send("index=" + id);
+
+				update_frames(true);
+			}
+
+			async function update_local_frame_time() {
+				let data = await fetch("/frames/time");
+				let time = await data.json();
+
+				document.getElementById('frame_time').value = time;
+			}
+
+			function update_remote_frame_time() {
+				let xhr = new XMLHttpRequest();
+				xhr.open("POST", "/frames/time", false);
+				xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+				xhr.send("delay=" + document.getElementById('frame_time').value);
+			}
+
+			function key_press_frame_times(event) {
+				if (event.key === 'Enter') {
+					update_remote_frame_time();
+				}
+			}
+
+			update_images();
+			update_frames();
+			update_local_frame_time();
+		</script>
+	</body>
+</html>
