@@ -4,6 +4,7 @@ import os
 import time
 import glob
 import json
+import signal
 import requests
 import threading
 import tkinter as tk
@@ -155,6 +156,21 @@ def frames_times():
 		return "", 204
 	else:
 		return "", 405
+
+@app.route("/system/stop", methods=['GET'])
+def system_stop():
+	os.kill(os.getpid(), signal.SIGINT)
+	return "", 200
+
+@app.route("/system/restart", methods=['GET'])
+def system_restart():
+	subprocess.run('sudo reboot', shell=True)
+	return "", 200
+
+@app.route("/system/shutdown", methods=['GET'])
+def system_shutdown():
+	subprocess.run('sudo shutdown', shell=True)
+	return "", 200
 
 def window_runner():
 	def start_loop():
